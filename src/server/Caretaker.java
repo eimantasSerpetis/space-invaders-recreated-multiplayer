@@ -8,4 +8,14 @@ public class Caretaker {
     public Caretaker(){
         mementoStack = new Stack<Memento>();
     }
+
+    public void Save(Memento memento){
+        mementoStack.push(memento);
+    }
+
+    public void Restore(){
+        if(!mementoStack.isEmpty()){
+            mementoStack.pop().Restore();
+        }
+    }
 }
