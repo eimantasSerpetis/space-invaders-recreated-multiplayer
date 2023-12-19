@@ -2,6 +2,10 @@ package server;
 
 import common.EntityType;
 import common.MoveDirection;
+import common.iterator.EntityCollection;
+import common.iterator.EntityIterator;
+import common.iterator.ObserverCollection;
+import common.iterator.ObserverIterator;
 import server.entities.*;
 import server.entities.enemy.enemyGenerator.EnemyEntityGenerator;
 import server.entities.enemy.enemyGenerator.ProxyEnemyEntityGenerator;
@@ -21,10 +25,10 @@ import java.util.concurrent.ScheduledExecutorService;
 
 public class GameState implements StateSubject {
     private Map<Integer, PlayerServerEntity> playerEntities;
-    private Map<Integer, Entity> enemyEntities;
+    private EntityCollection enemyCollection;
     private Map<Integer, BulletServerEntity> bulletEntities;
     private Map<Integer, ShieldFragmentServerEntity> shieldFragmentEntities;
-    private List<StateObserver> observers;
+    private ObserverCollection observers;
     private List<Integer> shootCooldown;
     private ScheduledExecutorService executorService;
     private final int RIGHT_MOVEMENT_BOUND = 740;
@@ -41,10 +45,10 @@ public class GameState implements StateSubject {
 
     public GameState() {
         playerEntities = new ConcurrentHashMap<>();
-        enemyEntities = new ConcurrentHashMap<>();
+        enemyCollection = new EntityCollection(new ConcurrentHashMap<>());
         bulletEntities = new ConcurrentHashMap<>();
         shieldFragmentEntities = new ConcurrentHashMap<>();
-        observers = new ArrayList<>();
+        observers = new ObserverCollection(new ArrayList<>());
         shootCooldown = new ArrayList<>();
         executorService = Executors.newScheduledThreadPool(1);
         pointVisitor = new PointSetterVisitor();
@@ -55,9 +59,7 @@ public class GameState implements StateSubject {
 
     @Override
     public void addObserver(StateObserver observer) {
-        if (!observers.contains(observer)) {
-            observers.add(observer);
-        }
+        observers.add(observer);
     }
 
     @Override
@@ -67,7 +69,9 @@ public class GameState implements StateSubject {
 
     @Override
     public void notifyObservers(GameStateEvent event) {
-        for (StateObserver observer : observers) {
+        ObserverIterator iterator = observers.createIterator();
+        while (iterator.hasNext()) {
+            StateObserver observer = iterator.getNext();
             observer.onEvent(event);
         }
     }
@@ -91,7 +95,7 @@ public class GameState implements StateSubject {
                 enemyEntity.accept(pointVisitor);
                 enemyEntity.accept(speedSetterVisitor);
 
-                enemyEntities.put(enemyEntity.getId(), enemyEntity);
+                enemyCollection.put(enemyEntity.getId(), enemyEntity);
                 notifyObservers(new EntityUpdateEvent(enemyEntity, false));
             }
         }
@@ -168,12 +172,14 @@ public class GameState implements StateSubject {
             }
             switch (bullet.getBulletSender()) {
                 case PLAYER:
-                    for (int enemyId : enemyEntities.keySet()) {
-                        Entity enemy = enemyEntities.get(enemyId);
+                    EntityIterator iterator = enemyCollection.createIterator();
+                    while (iterator.hasNext()) {
+                        Map.Entry<Integer, Entity> enemyEntry = iterator.getNext();
+                        Entity enemy = enemyEntry.getValue();
                         if (bullet.intersects(enemy)) {
                             addPoints(enemy.getPointWorth());
                             removeEntity(bulletId, EntityType.BULLET);
-                            removeEntity(enemyId, EntityType.ENEMY);
+                            removeEntity(enemyEntry.getKey(), EntityType.ENEMY);
                             break;
                         }
                     }
@@ -196,7 +202,7 @@ public class GameState implements StateSubject {
         Entity entity = null;
         switch (entityType) {
             case ENEMY:
-                entity = enemyEntities.remove(id);
+                entity = enemyCollection.remove(id);
                 break;
             case PLAYER:
                 entity = playerEntities.remove(id);
@@ -298,28 +304,28 @@ public class GameState implements StateSubject {
         Map<Integer, Entity> entities = new ConcurrentHashMap<>();
         entities.putAll(playerEntities);
         entities.putAll(bulletEntities);
-        entities.putAll(enemyEntities);
+        entities.putAll(enemyCollection.getAll());
         entities.putAll(shieldFragmentEntities);
         return entities;
     }
 
-    public Memento saveToMemento(){
+    public Memento saveToMemento() {
         return new Memento(this);
     }
 
-    public Map<Integer, PlayerServerEntity> getPlayerEntities(){
+    public Map<Integer, PlayerServerEntity> getPlayerEntities() {
         return playerEntities;
     }
 
-    public Map<Integer, Entity> getEnemyEntities(){
-        return enemyEntities;
+    public EntityCollection getEnemyEntities() {
+        return enemyCollection;
     }
 
-    public Map<Integer, BulletServerEntity> getBulletEntities(){
+    public Map<Integer, BulletServerEntity> getBulletEntities() {
         return bulletEntities;
     }
 
-    public Map<Integer, ShieldFragmentServerEntity> getShieldFragmentEntities(){
+    public Map<Integer, ShieldFragmentServerEntity> getShieldFragmentEntities() {
         return shieldFragmentEntities;
     }
 
@@ -331,39 +337,41 @@ public class GameState implements StateSubject {
         return livesLeft;
     }
 
-    public void setPlayerEntities(Map<Integer, PlayerServerEntity> playerEntities){
+    public void setPlayerEntities(Map<Integer, PlayerServerEntity> playerEntities) {
         this.playerEntities = playerEntities;
 
         //Redraw Player entities
-        for(Map.Entry<Integer,PlayerServerEntity> entry:playerEntities.entrySet()){
+        for (Map.Entry<Integer, PlayerServerEntity> entry : playerEntities.entrySet()) {
             notifyObservers(new EntityUpdateEvent(entry.getValue(), false));
         }
-        
+
     }
 
-    public void setEnemyEntities(Map<Integer, Entity> enemyEntities){
-        this.enemyEntities = enemyEntities;
+    public void setEnemyEntities(EntityCollection enemyEntities) {
+        this.enemyCollection = enemyEntities;
 
         //Redraw Enemy entities
-        for(Map.Entry<Integer,Entity> entry:enemyEntities.entrySet()){
+        EntityIterator entityIterator = enemyCollection.createIterator();
+        while (entityIterator.hasNext()) {
+            Map.Entry<Integer, Entity> entry = entityIterator.getNext();
             notifyObservers(new EntityUpdateEvent(entry.getValue(), false));
         }
     }
 
-    public void setBulletEntities(Map<Integer, BulletServerEntity> bulletEntities){
+    public void setBulletEntities(Map<Integer, BulletServerEntity> bulletEntities) {
         this.bulletEntities = bulletEntities;
 
         //Redraw Bullet entities
-        for(Map.Entry<Integer,BulletServerEntity> entry:bulletEntities.entrySet()){
+        for (Map.Entry<Integer, BulletServerEntity> entry : bulletEntities.entrySet()) {
             notifyObservers(new EntityUpdateEvent(entry.getValue(), false));
         }
     }
 
-    public void setShieldFragmentEntities(Map<Integer, ShieldFragmentServerEntity> shieldFragmentEntities){
+    public void setShieldFragmentEntities(Map<Integer, ShieldFragmentServerEntity> shieldFragmentEntities) {
         this.shieldFragmentEntities = shieldFragmentEntities;
 
         //Redraw Shield fragment entities
-        for(Map.Entry<Integer,ShieldFragmentServerEntity> entry:shieldFragmentEntities.entrySet()){
+        for (Map.Entry<Integer, ShieldFragmentServerEntity> entry : shieldFragmentEntities.entrySet()) {
             notifyObservers(new EntityUpdateEvent(entry.getValue(), false));
         }
     }
