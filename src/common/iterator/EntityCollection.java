@@ -3,12 +3,17 @@ package common.iterator;
 import server.entities.Entity;
 
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class EntityCollection implements IterableCollection {
     private final Map<Integer, Entity> enemyEntities;
 
     public EntityCollection(Map<Integer, Entity> enemyEntities) {
         this.enemyEntities = enemyEntities;
+    }
+
+    public EntityCollection(EntityCollection enemyEntities) {
+        this.enemyEntities = new ConcurrentHashMap<Integer, Entity>(enemyEntities.getAll());
     }
 
     @Override

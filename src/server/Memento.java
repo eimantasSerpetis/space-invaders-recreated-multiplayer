@@ -19,7 +19,7 @@ public class Memento {
     public Memento(GameState gameState) {
         this.gameState = gameState;
         playerEntities = new ConcurrentHashMap<Integer, PlayerServerEntity>(gameState.getPlayerEntities());
-        enemyEntities = new EntityCollection(gameState.getEnemyEntities().getAll());
+        enemyEntities = new EntityCollection(gameState.getEnemyEntities());
         bulletEntities = new ConcurrentHashMap<Integer, BulletServerEntity>(gameState.getBulletEntities());
         shieldFragmentEntities = new ConcurrentHashMap<Integer, ShieldFragmentServerEntity>(gameState.getShieldFragmentEntities());
         livesLeft = gameState.getLivesLeft();
