@@ -3,7 +3,7 @@ package client.particles;
 import java.awt.*;
 import java.util.Random;
 
-public class ShootParticleSystem extends ParticleSystem{
+public final class ShootParticleSystem extends ParticleSystem{
     private Random rnd;
     private Color startingParticleColor, endParticleColor;
     private int maxParticleDistance;

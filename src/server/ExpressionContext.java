@@ -9,7 +9,7 @@ public class ExpressionContext {
     }
     public int getCount(EntityType type){
         return switch (type) {
-            case ENEMY -> gameState.getEnemyEntities().size();
+            case ENEMY -> gameState.getEnemyEntities().getAll().size();
             case BULLET -> gameState.getBulletEntities().size();
             case SHIELD -> gameState.getShieldFragmentEntities().size();
             case PLAYER -> gameState.getPlayerEntities().size();

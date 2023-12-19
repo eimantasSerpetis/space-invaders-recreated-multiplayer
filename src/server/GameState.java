@@ -132,17 +132,7 @@ public class GameState implements StateSubject {
             }
         }
     }
-    public void moveEntityByCoords(int id, int x, int y){
-        Entity entity = null;
-        entity = enemyEntities.get(id);
-        entity = entity == null ? bulletEntities.get(id) : null;
-        entity = entity == null ? enemyEntities.get(id) : null;
-        entity = entity == null ? playerEntities.get(id) : null;
-        if(entity != null){
-            entity.setX(x);
-            entity.setY(y);
-        }
-    }
+
     private void moveEntity(ServerEntity entity, MoveDirection moveDirection) {
         entity.move(moveDirection);
         notifyObservers(new EntityUpdateEvent(entity, false));
