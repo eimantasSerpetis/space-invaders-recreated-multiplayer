@@ -7,17 +7,19 @@ import common.Configuration;
 public class GameLoop implements Runnable{
     private static GameLoop instance = null;
     private long lastFrameTime;
+    private long lastMoveTime;
     private final GameState state;
     private final double timeStep;
     private volatile boolean gameRunning;
-    private Stack<Memento> mementoStack;
+    private Caretaker caretaker;
 
     private GameLoop(){
         lastFrameTime = System.currentTimeMillis();
+        lastMoveTime = System.currentTimeMillis();
         timeStep = 1000.0 / Configuration.REFRESH_RATE;
         state = new GameState();
         gameRunning = false;
-        mementoStack = new Stack<Memento>();
+        caretaker = new Caretaker();
     }
 
     public static synchronized GameLoop getInstance() {
@@ -39,8 +41,11 @@ public class GameLoop implements Runnable{
                 continue;
             }
             state.updateBullets();
-            //this should be called according to a timer or smth
-            //state.updateEnemies(MoveDirection.LEFT);
+            deltaTime = currentTime - lastMoveTime;
+            if(deltaTime > 1000){
+                state.moveEnemies();
+                lastMoveTime = currentTime;
+            }
             state.checkBulletCollisions();
             lastFrameTime = currentTime;
         }
@@ -51,13 +56,11 @@ public class GameLoop implements Runnable{
     }
 
     public void saveState(){
-        mementoStack.push(state.saveToMemento());
+        caretaker.Save(state.saveToMemento());
     }
 
     public void restoreState(){
-        if(!mementoStack.isEmpty()){
-            mementoStack.pop().Restore();
-        }
+        caretaker.Restore();
     }
 
     public boolean isGameRunning() {
