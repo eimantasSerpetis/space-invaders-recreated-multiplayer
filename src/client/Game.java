@@ -11,8 +11,7 @@ import common.packets.IPacketFactory;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
+import java.awt.event.*;
 import java.io.File;
 import java.io.IOException;
 import java.util.Map;
@@ -57,7 +56,7 @@ public class Game extends JPanel implements KeyListener, Runnable {
         this.soundPlayer = soundPlayer;
         entities = new ConcurrentHashMap<>();
         isRunning = true;
-        setPreferredSize(new Dimension(770, 652));
+        setSize(new Dimension(770, 652));
         addKeyListener(this);
         lastUpdateTimeVideo = System.nanoTime();
         lastUpdateTimeLogic = System.nanoTime();
@@ -68,7 +67,14 @@ public class Game extends JPanel implements KeyListener, Runnable {
         inputHandler = new InputHandler();
         rnd = new Random();
         particleSystemsManager = new ParticleSystemsManager();
+        addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                requestFocusInWindow();
+            }
+        });
     }
+
 
     @Override
     protected void paintComponent(Graphics g) {

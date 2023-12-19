@@ -1,5 +1,6 @@
 package client;
 
+import common.Configuration;
 import common.PacketHandler;
 import common.packets.IPacketFactory;
 import common.packets.Packet;
@@ -25,7 +26,7 @@ public class Client {
             IPacketFactory packetFactory = new PacketFactory();
             soundPlayer = new TinySoundAdapter();
             soundPlayer.setVolume(0.5f);
-            game = new Game(this, packetFactory,180, 30, soundPlayer);
+            game = new Game(this, packetFactory,180, Configuration.REFRESH_RATE, soundPlayer);
             connectionFrame = new ConnectionFrame("Space Invaders MP", this);
             gameFrame = new GameFrame("Space Invaders MP", this, game);
             otherPlayerList = new ConcurrentHashMap<>();
