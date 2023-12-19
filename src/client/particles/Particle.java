@@ -2,7 +2,7 @@ package client.particles;
 
 import java.awt.*;
 
-class Particle {
+public class Particle {
     private float x, y, xSpeed, ySpeed;
     private int size;
     private Color color;
