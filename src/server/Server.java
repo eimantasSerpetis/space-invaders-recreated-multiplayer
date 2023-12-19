@@ -23,9 +23,12 @@ public class Server {
     private final ServerSocket serverSocket;
     private final Map<Integer, ServerPlayer> connectedPlayers;
 
+    private final LinkedList<String> commandHistory;
+
     public Server(int port) throws IOException {
         serverSocket = new ServerSocket(port);
         connectedPlayers = new ConcurrentHashMap<>();
+        commandHistory = new LinkedList<>();
     }
 
     public void addServerPlayer(int id, ServerPlayer serverPlayer) {
@@ -135,6 +138,13 @@ public class Server {
         }
 
     }
+    public ServerPlayer getPlayer(int id){
+        return connectedPlayers.get(id);
+    }
+    public void addCommandToHistory(String command){
+        commandHistory.add(command);
+    }
+
 
     public static void main(String[] args) {
         int port = 12345;
