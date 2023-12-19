@@ -139,7 +139,11 @@ public class GameState implements StateSubject {
     }
 
     public void moveEnemies() {
-        for (Entity entity : enemyEntities.values()){
+        EntityIterator entityIterator = enemyCollection.createIterator();
+
+        while (entityIterator.hasNext()) {
+            Map.Entry<Integer, Entity> entry = entityIterator.getNext();
+            Entity entity = entry.getValue();
             entity.process();
             notifyObservers(new EntityUpdateEvent(entity, false));
         }
